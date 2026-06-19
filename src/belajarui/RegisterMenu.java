@@ -12,7 +12,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 public class RegisterMenu extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(RegisterMenu.class.getName());
@@ -45,31 +46,7 @@ public class RegisterMenu extends javax.swing.JFrame {
         
         lblLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(lblLogo);
-
-        // INPUT NAMA LENGKAP
-        JLabel lblNama = new JLabel("Nama Lengkap");
-        lblNama.setFont(new Font("SansSerif", Font.BOLD, 12));
-        lblNama.setAlignmentX(Component.CENTER_ALIGNMENT);
-        formCard.add(lblNama);
         
-        JTextField txtNama = new JTextField(20);
-        txtNama.setMaximumSize(new Dimension(250, 35));
-        txtNama.setAlignmentX(Component.CENTER_ALIGNMENT);
-        formCard.add(txtNama);
-        formCard.add(Box.createRigidArea(new Dimension(0, 10)));
-
-        // INPUT NOMOR HP
-        JLabel lblHp = new JLabel("Nomor HP");
-        lblHp.setFont(new Font("SansSerif", Font.BOLD, 12));
-        lblHp.setAlignmentX(Component.CENTER_ALIGNMENT);
-        formCard.add(lblHp);
-        
-        JTextField txtHp = new JTextField(20);
-        txtHp.setMaximumSize(new Dimension(250, 35));
-        txtHp.setAlignmentX(Component.CENTER_ALIGNMENT);
-        formCard.add(txtHp);
-        formCard.add(Box.createRigidArea(new Dimension(0, 10)));
-
         // INPUT USERNAME
         JLabel lblUser = new JLabel("Username");
         lblUser.setFont(new Font("SansSerif", Font.BOLD, 12));
@@ -81,7 +58,7 @@ public class RegisterMenu extends javax.swing.JFrame {
         txtUser.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(txtUser);
         formCard.add(Box.createRigidArea(new Dimension(0, 10)));
-
+        
         // INPUT PASSWORD
         JLabel lblPass = new JLabel("Password");
         lblPass.setFont(new Font("SansSerif", Font.BOLD, 12));
@@ -93,8 +70,44 @@ public class RegisterMenu extends javax.swing.JFrame {
         txtPass.setAlignmentX(Component.CENTER_ALIGNMENT);
         formCard.add(txtPass);
         formCard.add(Box.createRigidArea(new Dimension(0, 20)));
-
-        // TOMBOL DAFTAR
+        
+        // INPUT NAMA LENGKAP
+        JLabel lblNama = new JLabel("Nama Lengkap");
+        lblNama.setFont(new Font("SansSerif", Font.BOLD, 12));
+        lblNama.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(lblNama);
+        
+        JTextField txtNama = new JTextField(20);
+        txtNama.setMaximumSize(new Dimension(250, 35));
+        txtNama.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(txtNama);
+        formCard.add(Box.createRigidArea(new Dimension(0, 10)));
+        
+        //  INPUT EMAIL 
+        JLabel lblEmail = new JLabel("Email");
+        lblEmail.setFont(new Font("SansSerif", Font.BOLD, 12));
+        lblEmail.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(lblEmail);
+        
+        JTextField txtEmail = new JTextField(20);
+        txtEmail.setMaximumSize(new Dimension(250, 35));
+        txtEmail.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(txtEmail);
+        formCard.add(Box.createRigidArea(new Dimension(0, 10)));
+        
+        // INPUT NOMOR HP
+        JLabel lblHp = new JLabel("Nomor HP");
+        lblHp.setFont(new Font("SansSerif", Font.BOLD, 12));
+        lblHp.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(lblHp);
+        
+        JTextField txtHp = new JTextField(20);
+        txtHp.setMaximumSize(new Dimension(250, 35));
+        txtHp.setAlignmentX(Component.CENTER_ALIGNMENT);
+        formCard.add(txtHp);
+        formCard.add(Box.createRigidArea(new Dimension(0, 10)));
+        
+        // --- PROSES TOMBOL DAFTAR (INSERT TO DATABASE) ---
         JButton btnRegister = new JButton("DAFTAR");
         btnRegister.setBackground(new Color(52, 152, 219));
         btnRegister.setForeground(Color.WHITE);
@@ -103,11 +116,70 @@ public class RegisterMenu extends javax.swing.JFrame {
         btnRegister.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnRegister.setFocusPainted(false);
         
+        
         btnRegister.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Akun berhasil dibuat! Silakan Login.", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-            LoginMenu menuLogin = new LoginMenu();
-            menuLogin.setVisible(true);
-            dispose();
+            // Tarik semua data dari textfield UI
+            String username = txtUser.getText().trim();
+            String password = new String(txtPass.getPassword()).trim();
+            String namaLengkap = txtNama.getText().trim();
+            String email = txtEmail.getText().trim();
+            String nomorHp = txtHp.getText().trim();
+            
+            // Validasi 1: Cegah kolom kosong
+            if (username.equals("") || password.equals("") || namaLengkap.equals("") || email.equals("") || nomorHp.equals("")) {
+                JOptionPane.showMessageDialog(this, "Semua data wajib diisi ya bro, jangan dikosongin!", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            // Validasi 2: Email harus mengandung karakter '@'
+            if (!email.contains("@")) {
+                JOptionPane.showMessageDialog(this, "Format email salah, bro! Wajib ada karakter '@'.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                txtEmail.requestFocus(); // Biar kursor langsung fokus ke textfield email
+                return;
+            }
+            // ⭐ Validasi 3 : Nomor HP wajib angka semua
+            if (!nomorHp.matches("\\d+")) {
+                JOptionPane.showMessageDialog(this, "Nomor HP harus berupa angka semua, bro! Jangan masukin huruf.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                txtHp.requestFocus();
+                return;
+            }
+            // Validasi 4: Cegah nomor HP kepanjangan (Sesuai VARCHAR(13) di DB lu)
+            if (nomorHp.length() > 13) {
+                JOptionPane.showMessageDialog(this, "Nomor HP kepanjangan, cuy! Maksimal 13 angka.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                txtHp.requestFocus();
+                return;
+            }
+            
+            // Eksekusi Simpan ke MySQL
+            try {
+                Connection conn = Koneksi.getconnection(); // Memanggil class koneksi lu
+                String sql = "INSERT INTO tb_user (username, password, nama_lengkap, email, nomor_hp) VALUES (?, ?, ?, ?, ?)";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                
+                ps.setString(1, username);
+                ps.setString(2, password); // Sementara simpan plain text sesuai skema login awal lu
+                ps.setString(3, namaLengkap);
+                ps.setString(4, email);
+                ps.setString(5, nomorHp);
+                
+                int rowsInserted = ps.executeUpdate();
+                
+                if (rowsInserted > 0) {
+                    JOptionPane.showMessageDialog(this, "Akun berhasil dibuat! Silakan Login.", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    
+                    // Lempar ke menu login
+                    LoginMenu menuLogin = new LoginMenu();
+                    menuLogin.setVisible(true);
+                    dispose();
+                }
+                
+            } catch (java.sql.SQLIntegrityConstraintViolationException ex) {
+                // Trigger otomatis kalau Username UNIQUE-nya tabrakan di DB
+                JOptionPane.showMessageDialog(this, "Username '" + username + "' udah dipake orang lain, bro! Cari nama lain.", "Registrasi Gagal", JOptionPane.ERROR_MESSAGE);
+                txtUser.requestFocus();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Gagal registrasi karena error database: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
         
         formCard.add(btnRegister);
