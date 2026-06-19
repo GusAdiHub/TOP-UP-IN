@@ -218,16 +218,92 @@ public class DashboardAdmin extends javax.swing.JFrame {
         title.setFont(new Font("SansSerif", Font.BOLD, 20));
         panel.add(title, BorderLayout.NORTH);
 
-        // Placeholder tabel kosong
-        JTable table = new JTable(new DefaultTableModel(new Object[]{"ID", "Nama", "Detail"}, 0));
+        // Bikin Model Tabel (Biar nanti bisa diisi data beneran dari database)
+        DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"ID", "Nama", "Detail"}, 0);
+        JTable table = new JTable(tableModel);
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
 
         // Tombol Aksi CRUD di bawah
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         actionPanel.setOpaque(false);
-        actionPanel.add(new JButton("Tambah"));
-        actionPanel.add(new JButton("Edit"));
-        actionPanel.add(new JButton("Hapus"));
+        
+        JButton btnTambah = new JButton("Tambah");
+        JButton btnEdit = new JButton("Edit");
+        JButton btnHapus = new JButton("Hapus");
+        
+        // --- LOGIKA POP UP TAMBAH DATA ---
+        btnTambah.addActionListener(e -> {
+            JPanel formPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+            JTextField txtId = new JTextField(15);
+            JTextField txtNama = new JTextField(15);
+            JTextField txtDetail = new JTextField(15);
+            
+            formPanel.add(new JLabel("ID:"));
+            formPanel.add(txtId);
+            formPanel.add(new JLabel("Nama:"));
+            formPanel.add(txtNama);
+            formPanel.add(new JLabel("Detail:"));
+            formPanel.add(txtDetail);
+
+            int hasil = JOptionPane.showConfirmDialog(panel, formPanel, "Tambah Data Baru", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            
+            if (hasil == JOptionPane.OK_OPTION) {
+                // Nanti temenmu yg urus backend tinggal ganti ini jadi query INSERT ke database
+                JOptionPane.showMessageDialog(panel, "Simulasi: Data '" + txtNama.getText() + "' berhasil ditambah!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        // --- LOGIKA POP UP EDIT DATA ---
+        btnEdit.addActionListener(e -> {
+            // Cek dulu user udah milih baris di tabel apa belum
+            int barisDipilih = table.getSelectedRow();
+            if (barisDipilih == -1) {
+                JOptionPane.showMessageDialog(panel, "Pilih dulu datanya di tabel bang baru bisa diedit!", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            JPanel formPanel = new JPanel(new GridLayout(0, 1, 5, 5));
+            // Ceritanya ngambil data dari baris yg dipilih buat ditampilin di form edit
+            JTextField txtId = new JTextField(tableModel.getValueAt(barisDipilih, 0).toString(), 15);
+            txtId.setEditable(false); // Biasaya ID gak boleh diedit
+            JTextField txtNama = new JTextField(tableModel.getValueAt(barisDipilih, 1).toString(), 15);
+            JTextField txtDetail = new JTextField(tableModel.getValueAt(barisDipilih, 2).toString(), 15);
+            
+            formPanel.add(new JLabel("ID (Tidak bisa diubah):"));
+            formPanel.add(txtId);
+            formPanel.add(new JLabel("Nama:"));
+            formPanel.add(txtNama);
+            formPanel.add(new JLabel("Detail:"));
+            formPanel.add(txtDetail);
+
+            int hasil = JOptionPane.showConfirmDialog(panel, formPanel, "Edit Data", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            
+            if (hasil == JOptionPane.OK_OPTION) {
+                // Nanti temenmu yg urus backend tinggal ganti ini jadi query UPDATE ke database
+                JOptionPane.showMessageDialog(panel, "Simulasi: Data berhasil diubah!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        // --- LOGIKA POP UP HAPUS DATA ---
+        btnHapus.addActionListener(e -> {
+            int barisDipilih = table.getSelectedRow();
+            if (barisDipilih == -1) {
+                JOptionPane.showMessageDialog(panel, "Pilih dulu datanya di tabel bang yg mau dihapus!", "Peringatan", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Tanyain lagi buat mastiin
+            int konfirmasi = JOptionPane.showConfirmDialog(panel, "Yakin nih mau ngehapus data ini?", "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            
+            if (konfirmasi == JOptionPane.YES_OPTION) {
+                // Nanti temenmu yg urus backend tinggal ganti ini jadi query DELETE ke database
+                JOptionPane.showMessageDialog(panel, "Simulasi: Data berhasil dihapus!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+        
+        actionPanel.add(btnTambah);
+        actionPanel.add(btnEdit);
+        actionPanel.add(btnHapus);
         
         panel.add(actionPanel, BorderLayout.SOUTH);
 
